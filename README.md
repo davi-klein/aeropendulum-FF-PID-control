@@ -32,6 +32,6 @@ aeropendulum-simulation/
 
 ## Author
 
-**Davi Klein**
-M.Sc. Student in Computer Science | Control Systems & Software Engineering  
+**Davi Klein**  
+M.S in Mechanichal Engineering (UFSC) | M.S. Student in Computer Science | AI & Robotics Researcher  
 Federal University of Santa Maria (UFSM)
