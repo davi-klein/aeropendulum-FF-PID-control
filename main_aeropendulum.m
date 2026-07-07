@@ -8,6 +8,9 @@ addpath('src');
 disp('Loading physical parameters...');
 params = init_aeropendulum_params();
 
+disp('Generating Trajectories...');
+[ts_sine, ts_trap] = generate_aeropendulum_refs(20, 0.001);
+
 disp('Configuring Simulink environment...');
 model_name = 'aeropendulum_dynamics';
 load_system(model_name);
