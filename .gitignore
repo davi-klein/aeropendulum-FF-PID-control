@@ -1,1 +1,1 @@
--e "*.asv\n*.autosave\nslprj/\n*.slxc\n*.mexw64\n*.mexa64\n*.svg\*.mat" 
+-e "*.asv\n*.autosave\nslprj/\n*.slxc\n*.mexw64\n*.mexa64\n*.svg\n*.mat\n *.pdf\n *.pdf_tex \n " 
