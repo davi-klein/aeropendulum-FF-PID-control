@@ -26,4 +26,12 @@ function p = init_aeropendulum_params()
     % Actuator (Motor) Parameters
     p.K_v = 96.34;         % Motor gain
     p.tau_m = 0.05;        % Motor time constant
+
+    % Simulation Parameters
+    p.stpt = 20;           % Stop Time (s)
+    p.type = 'sine';        % Type of Reference Trajectory (sine or trapezoidal)
+    p.f = 10e+03;          % Sampling Frequency (Hz)
+    p.dt = 1/p.f;          % Trajectory Sampling Time (s)
+    p.N = 50;              % Derivative Filter Coefficient 
+
 end
