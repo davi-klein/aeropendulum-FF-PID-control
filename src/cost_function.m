@@ -14,11 +14,11 @@ function J = cost_function(K, model_name, th_ref_ts)
     simIn = simIn.setVariable('th_ref', th_ref_ts);
     
     % Suppress visual output for speed
-    simIn = simIn.setModelParameter('SimulationMode', 'normal');
+    simIn = simIn.setModelParameter('SimulationMode', 'accelerator');
     
     try
         % Run simulation
-        out = sim(simIn);
+        out = sim(simIn, 'UseFastRestart', 'on', 'ShowProgress', 'off');
         
         % Extract logged error
         error_sig = out.logsout.get('tracking_error').Values;
