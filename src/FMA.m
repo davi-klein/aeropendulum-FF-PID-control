@@ -1,6 +1,7 @@
-function [K_opt, f_evals, exec_time] = FMA(model_name, th_ref_ts)
+function [K_opt, f_evals, exec_time] = FMA(p,model_name, th_ref_ts)
     % FMA Tunes PID gains using the Firefly Metaheuristic Algorithm
     % Returns optimal gains, number of function evaluations, and execution time.
+    % This algorithm is based on the one from Yang, et. al.
     
     % Start the timer
     tic;
@@ -10,15 +11,21 @@ function [K_opt, f_evals, exec_time] = FMA(model_name, th_ref_ts)
     
     % FA Parameters
     n_fireflies = 15;     % Population size
-    max_iter = 20;        % Maximum generations
+    max_iter = 50;        % Maximum generations
     alpha = 0.5;          % Randomness parameter
     beta0 = 1.0;          % Attractiveness at distance r=0
     gamma = 1.0;          % Light absorption coefficient
     
     % PID Bounds: [Kp, Ki, Kd]
     lb = [0.1, 0.0, 0.01]; 
-    ub = [20.0, 10.0, 5.0];
+    ub = [p.Kp_max, p.Ki_max, p.Kd_max];
     dim = 3;
+
+    % Stagnation Criterion Parameters
+    N_stall = 10;         % Number of generations without improvement to trigger stop
+    delta = 1e-3;         % Minimum required improvement in ITAE
+    stall_count = 0;      % Initialize counter
+    prev_best_cost = inf; % Initialize previous best
     
     % Initialize population randomly within bounds
     fireflies = repmat(lb, n_fireflies, 1) + rand(n_fireflies, dim) .* repmat((ub - lb), n_fireflies, 1);
@@ -57,8 +64,23 @@ function [K_opt, f_evals, exec_time] = FMA(model_name, th_ref_ts)
         alpha = alpha * 0.95;
         
         [best_cost, idx] = min(fitness);
-        fprintf('Iter %d/%d | Best ITAE Cost: %.4f | Kp: %.3f, Ki: %.3f, Kd: %.3f\n', ...
-            iter, max_iter, best_cost, fireflies(idx, 1), fireflies(idx, 2), fireflies(idx, 3));
+        improvement = prev_best_cost - best_cost;
+        
+        % Stall counter
+        if improvement < delta
+            stall_count = stall_count + 1;
+        else
+            stall_count = 0; 
+            prev_best_cost = best_cost;
+        end
+        
+        fprintf('Iter %d/%d | Best ITAE: %.4f | Stall: %d/%d | Kp: %.2f, Ki: %.2f, Kd: %.2f\n', ...
+            iter, max_iter, best_cost, stall_count, N_stall, fireflies(idx, 1), fireflies(idx, 2), fireflies(idx, 3));
+
+        if stall_count >= N_stall
+            fprintf('\n>>> Optimization terminated early: ITAE stagnated for %d generations. <<<\n', N_stall);
+            break; 
+        end
     end
     
     % Return the best gains found
