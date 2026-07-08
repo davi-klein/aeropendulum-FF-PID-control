@@ -17,31 +17,34 @@ function [th_ref_ts] = generate_aeropendulum_refs(type, t_end, dt)
         % 1. Sine Wave Reference
         th_sine = (amp/2)*sin(2*pi*freq*t);
         th_ref_ts = timeseries(th_sine', t');
-    elseif strcmp('trapezoidal',type)
-       % 2. Differentiable Trapezoidal Reference
-       
+    elseif strcmp('trapezoidal', type)
+        % 2. Bipolar Differentiable Trapezoidal Reference
         t_cycle = 4*t_trans + 2*t_hold; 
         th_trap = zeros(size(t));
         
         for i = 1:length(t)
-            t_c = mod(t(i), t_cycle); 
-            
-            if t_c < t_trans
-                th_trap(i) = (amp/2) * (1 - cos(pi * t_c / t_trans));
-                
-            elseif t_c < (t_trans + t_hold)
-                th_trap(i) = amp;
-                
-            elseif t_c < (3*t_trans + t_hold)
-                t_fall = t_c - (t_trans + t_hold);
-                th_trap(i) = amp * cos(pi * t_fall / (2*t_trans));
-                
-            elseif t_c < (3*t_trans + 2*t_hold)
-                th_trap(i) = -amp;
-                
+            if t(i) < t_trans
+          
+                th_trap(i) = (amp/2) * (1 - cos(pi * t(i) / t_trans));
             else
-                t_rise2 = t_c - (3*t_trans + 2*t_hold);
-                th_trap(i) = -(amp/2) * (1 + cos(pi * t_rise2 / t_trans));
+   
+                t_periodic = t(i) - t_trans;
+                t_c = mod(t_periodic, t_cycle); 
+                
+                if t_c < t_hold
+                    th_trap(i) = amp;
+                    
+                elseif t_c < (t_hold + 2*t_trans)
+                    t_fall = t_c - t_hold;
+                    th_trap(i) = amp * cos(pi * t_fall / (2*t_trans));
+                    
+                elseif t_c < (2*t_hold + 2*t_trans)
+                    th_trap(i) = -amp;
+                    
+                else
+                    t_rise = t_c - (2*t_hold + 2*t_trans);
+                    th_trap(i) = -amp * cos(pi * t_rise / (2*t_trans));
+                end
             end
         end
         th_ref_ts = timeseries(th_trap', t');
