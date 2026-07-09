@@ -15,7 +15,7 @@ function p = init_aeropendulum_params()
     p.J_p = 0.0564501;          % Inertia of the pendulum (kg*m^2)
     p.J_l = p.m_l * p.r^2; % Inertia of the load (kg*m^2)
     p.J = p.J_p + p.J_l;   % Total inertia
-    p.L_p = 0.3;           % Propeller distance (m)
+    p.L_p = 0.25;           % Propeller distance (m)
     
     % Aerodynamic & Friction Parameters
     p.k_T = 0.062;         % Thrust coeff (Olivares et al. (2023))
@@ -23,7 +23,7 @@ function p = init_aeropendulum_params()
     p.B_eq = 0.009013;     % Linear damping (Olivares et al. (2023))
     p.C_d = 0.000;         % Aero drag coeff
 
-     % Actuator (Motor) Parameters
+    % Actuator (Motor) Parameters
     p.K_v = 96.34;         % Motor gain
     p.tau_m = 0.05;        % Motor time constant
 
@@ -33,7 +33,7 @@ function p = init_aeropendulum_params()
     p.f = 1e+03;          % Sampling Frequency (Hz)
     p.dt = 1/p.f;         % Trajectory Sampling Time (s)
     p.N = 50;             % Derivative Filter Coefficient 
-    p.use_ff = 0;         % 1 = Enable Gravity FF, 0 = Pure PID
+    p.use_ff = 1;         % 1 = Enable Gravity FF, 0 = Pure PID
 
     % Controller gain limits
     p.f_t = 10;            % Target frequency for ressonance avoidance in Hz
