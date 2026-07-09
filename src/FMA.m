@@ -1,4 +1,4 @@
-function [K_opt, f_evals, exec_time] = FMA(p,model_name, th_ref_ts)
+function [K_opt, f_evals, exec_time] = FMA(p, model_name, th_ref_ts)
     % FMA Tunes PID gains using the Firefly Metaheuristic Algorithm
     % Returns optimal gains, number of function evaluations, and execution time.
     % This algorithm is based on the one from Yang, et. al.
