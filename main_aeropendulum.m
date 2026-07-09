@@ -23,7 +23,7 @@ disp('======================================================');
 warning('off', 'Simulink:Commands:SimulationsWithErrors');
 
 % Pass the sine wave for tuning 
-[K_opt, f_evals, exec_time] = FMA(model_name, th_ref_ts);
+[K_opt, f_evals, exec_time] = FMA(p,model_name, th_ref_ts);
 
 warning('on', 'Simulink:Commands:SimulationsWithErrors');
 
@@ -39,4 +39,4 @@ opt_metrics.f_evals = f_evals;
 opt_metrics.exec_time = exec_time;
 opt_metrics.time_per_eval = exec_time / f_evals;
 
-post_process_results(p.type, model_name, K_opt, th_ref_ts, opt_metrics)
+post_process_results(p.type, model_name, K_opt, th_ref_ts, opt_metrics, p.use_ff)
