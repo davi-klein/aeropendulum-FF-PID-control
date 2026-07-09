@@ -1,4 +1,4 @@
-function post_process_results(type, model_name, K_opt, th_ref_ts, opt_metrics)
+function post_process_results(type, model_name, K_opt, th_ref_ts, opt_metrics, use_ff)
 % POST_PROCESS_RESULTS Simulates, plots, and saves optimal aeropendulum data
 % Args:
 %   type: trajectory type ('sine' or 'trapezoidal')
@@ -6,10 +6,19 @@ function post_process_results(type, model_name, K_opt, th_ref_ts, opt_metrics)
 %   K_opt: vector with optimized PID gains
 %   th_ref_ts: timeseries of the desired trajectory
 %   opt_metrics: struct containing algorithm performance data
-%   control_sig: control action signal timeseries
+%   use_ff: 1 for Gravity FF enabled, 0 for Pure PID
+
+    % 1. Determine Controller Labels for Titles and Filenames
+    if use_ff == 1
+        ctrl_title = 'PID + FF';
+        ctrl_file  = 'PID_FF';
+    else
+        ctrl_title = 'Pure PID';
+        ctrl_file  = 'purePID';
+    end
 
     % Simulate Optimal Response
-    disp('Simulating optimal response...');
+    fprintf('Simulating optimal %s response...\n', ctrl_title);
     
     simIn = Simulink.SimulationInput(model_name);
     simIn = simIn.setVariable('Kp', K_opt(1));
@@ -30,7 +39,7 @@ function post_process_results(type, model_name, K_opt, th_ref_ts, opt_metrics)
     rmse_val = sqrt(mean(e_deg.^2));
     max_err = max(abs(e_deg));
     
-    fprintf('\n=== Final Performance Metrics (%s) ===\n', type);
+    fprintf('\n=== Final Performance Metrics (%s | %s) ===\n', type, ctrl_title);
     fprintf('RMSE       : %.4f degrees\n', rmse_val);
     fprintf('Max Error  : %.4f degrees\n', max_err);
     fprintf('========================================\n\n');
@@ -45,7 +54,7 @@ function post_process_results(type, model_name, K_opt, th_ref_ts, opt_metrics)
     
     fig_pos = [100, 100, 520, 230]; 
     t_max = max(theta_out.Time);
-
+    
     % --- FIGURE 1: Trajectory Tracking ---
     fig_track = figure('Name', 'Trajectory Tracking', 'Position', fig_pos, 'Color', 'w');
     plot(th_ref_ts, 'k--', 'LineWidth', 1.5); hold on;
@@ -53,23 +62,24 @@ function post_process_results(type, model_name, K_opt, th_ref_ts, opt_metrics)
     grid on; xlim([0, t_max]);
     xlabel('Time (s)', 'FontSize', 10); ylabel('\theta (rad)', 'FontSize', 10);
     legend('\theta_{ref}', '\theta', 'Location', 'best', 'FontSize', 9);
-    title(sprintf('%s Trajectory Tracking', titleCase(type)), 'FontSize', 11, 'FontWeight', 'bold');
+    title(sprintf('%s Trajectory Tracking (%s)', titleCase(type), ctrl_title), 'FontSize', 11, 'FontWeight', 'bold');
     set(gca, 'FontSize', 9);
-
+    
     % --- FIGURE 2: Tracking Error ---
     fig_err = figure('Name', 'Tracking Error', 'Position', fig_pos, 'Color', 'w');
     plot(error_sig.Time, e_deg, 'Color', modern_red, 'LineWidth', 1.5);
     grid on; xlim([0, t_max]);
     xlabel('Time (s)', 'FontSize', 10); ylabel('Error (degrees)', 'FontSize', 10);
-    title('Tracking Error Profile', 'FontSize', 11, 'FontWeight', 'bold');
+    title(sprintf('Tracking Error Profile (%s)', ctrl_title), 'FontSize', 11, 'FontWeight', 'bold');
     set(gca, 'FontSize', 9);
-
+    
     % --- FIGURE 3: Control Action ---
     fig_ctrl = figure('Name', 'Control Action', 'Position', fig_pos, 'Color', 'w');
-    plot(control_sig.Time, control_sig.Data, 'Color', modern_green, 'LineWidth', 1.5);
-    grid on; xlim([0, t_max]);
+    plot(control_sig.Time, control_sig.Data, 'Color', modern_green, 'LineWidth', 1.5); hold on;
+    yline(12, 'k--', 'LineWidth', 1); yline(-12, 'k--', 'LineWidth', 1); 
+    grid on; xlim([0, t_max]); ylim([-14, 14]);
     xlabel('Time (s)', 'FontSize', 10); ylabel('Control Input (V)', 'FontSize', 10);
-    title('Controller Output (Voltage)', 'FontSize', 11, 'FontWeight', 'bold');
+    title(sprintf('Controller Output Voltage (%s)', ctrl_title), 'FontSize', 11, 'FontWeight', 'bold');
     set(gca, 'FontSize', 9);
     
     drawnow; % Force full rendering
@@ -84,6 +94,7 @@ function post_process_results(type, model_name, K_opt, th_ref_ts, opt_metrics)
     
     % Build the results structure
     sim_data.type = type;
+    sim_data.control_type = ctrl_title; % Secure the label inside the data struct
     sim_data.K_opt = K_opt;
     sim_data.opt_metrics = opt_metrics;
     sim_data.performance.rmse_deg = rmse_val;
@@ -92,23 +103,23 @@ function post_process_results(type, model_name, K_opt, th_ref_ts, opt_metrics)
     sim_data.reference = th_ref_ts.Data;
     sim_data.actual = theta_out.Data;
     
-    % Create a timestamped filename incorporating the trajectory type
+    % Create a timestamped filename incorporating trajectory AND control type
     timestamp = char(datetime('now', 'Format', 'yyyy_MM_dd_HHmmss'));
-    filename = sprintf('aeropendulum_opt_%s_%s.mat', type, timestamp);
+    filename = sprintf('aeropendulum_opt_%s_%s_%s.mat', type, ctrl_file, timestamp);
     full_filepath = fullfile(folder_name, filename);
     
     save(full_filepath, '-struct', 'sim_data');
     fprintf('Data successfully secured in: %s\n\n', full_filepath);
-
+    
     % Export Figure
     disp('Exporting separate PDFs for LaTeX...');
     figs_folder = 'figs';
     if ~exist(figs_folder, 'dir'), mkdir(figs_folder); end
     
-    % Save paths
-    path_track = fullfile(figs_folder, sprintf('aeropendulum_tracking_%s.pdf', type));
-    path_error = fullfile(figs_folder, sprintf('aeropendulum_error_%s.pdf', type));
-    path_control = fullfile(figs_folder, sprintf('aeropendulum_control_%s.pdf', type));
+    % Save paths injected with the control type
+    path_track = fullfile(figs_folder, sprintf('aeropendulum_tracking_%s_%s.pdf', type, ctrl_file));
+    path_error = fullfile(figs_folder, sprintf('aeropendulum_error_%s_%s.pdf', type, ctrl_file));
+    path_control = fullfile(figs_folder, sprintf('aeropendulum_control_%s_%s.pdf', type, ctrl_file));
     
     % Vector export with auto-cropping
     exportgraphics(fig_track, path_track, 'ContentType', 'vector', 'BackgroundColor', 'none');
