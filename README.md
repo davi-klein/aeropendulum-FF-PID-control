@@ -42,6 +42,9 @@ aeropendulum-simulation/
    ```matlab
    run('main_aeropendulum.m')
    ```
+## AI Assistance Disclosure
+
+In the interest of academic transparency, the development of this repository's architecture, MATLAB/Simulink API integration, and code refactoring was assisted by a Large Language Model (Google Gemini). The AI was utilized as a collaborative pair-programming tool to troubleshoot code implementation, and to generate the structure and README of this repository. All core control theory logic, dynamic mechanical equations, algorithm parameter tuning, and final engineering validations were strictly derived, guided, and verified by the human author.
 
 ## Author
 
