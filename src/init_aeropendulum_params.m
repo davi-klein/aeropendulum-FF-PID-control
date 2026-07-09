@@ -41,7 +41,7 @@ function p = init_aeropendulum_params()
     p.Kp_max = p.J*p.w_n^2;% Maximum proportional gain
     
     p.zeta = 1;            % Damping
-    p.Kd_max = 2*p.zeta*p.w_n*(p.J - p.B_eq); % Maximum derivative gain
+    p.Kd_max = (2 * p.zeta * p.w_n * p.J) - p.B_eq; % Maximum derivative gain
 
     p.wind_t = 2;          % Windup preventing time constant
     p.Ki_max = p.Kp_max/p.wind_t; % Maximum integral gain
