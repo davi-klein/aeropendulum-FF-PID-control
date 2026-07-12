@@ -5,14 +5,14 @@
 clc; close all; clear; format short eng;
 addpath('src');
 
-disp('Loading physical parameters...');
+fprintf('Loading physical parameters...\n');
 p = init_aeropendulum_params();
 assignin('base', 'p', p)
 
-fprintf('Generating %s trajectory...', p.type);
+fprintf('Generating %s trajectory...\n', p.type);
 th_ref_ts = generate_aeropendulum_refs(p.type, p.stpt, p.dt);
 
-disp('Configuring Simulink environment...');
+fprintf('Configuring Simulink environment...\n');
 model_name = 'aeropendulum_dynamics';
 load_system(model_name);
 
