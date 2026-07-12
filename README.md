@@ -11,7 +11,7 @@ The core of this project is an automated tuning pipeline that utilizes the **Fir
 
 ## Engineering & Software Highlights
 
-Tailored for academic research and rigorous journal submissions, this project diverges from standard academic scripting by employing strict software engineering and advanced control theory principles:
+Tailored for academic research, this project diverges from standard academic scripting by employing strict software engineering and advanced control theory principles:
 
 * **Metaheuristic Optimization Engine:** Implements a custom Firefly Algorithm with exploration-forward parameters and smart stagnation-based early termination. The optimization landscape's search space boundaries are dynamically calculated based on third-order position error dynamics, strict bandwidth limits (10 Hz) to avoid resonance, and critical damping criteria ($\zeta = 1$).
 * **API-Driven Co-Simulation:** The MATLAB-Simulink bridge is built using the `Simulink.SimulationInput` API. This isolates the simulation memory space, preventing Base Workspace pollution and enabling robust, automated multi-cycle evaluations.
@@ -45,8 +45,3 @@ aeropendulum-simulation/
 ## AI Assistance Disclosure
 
 In the interest of academic transparency, the development of this repository's architecture, MATLAB/Simulink API integration, and code refactoring was assisted by a Large Language Model (Google Gemini). The AI was utilized as a collaborative pair-programming tool to troubleshoot code implementation, and to generate the structure and README of this repository. All core control theory logic, dynamic mechanical equations, algorithm parameter tuning, and final engineering validations were strictly derived, guided, and verified by the human author.
-
-## Author
-
-**Davi Klein** M.Sc. Student in Computer Science | Control Systems & Software Engineering  
-Federal University of Santa Maria (UFSM)
