@@ -12,9 +12,9 @@ function [K_opt, f_evals, exec_time] = FMA(p, model_name, th_ref_ts)
     % FA Parameters
     n_fireflies = 15;     % Population size
     max_iter = 50;        % Maximum generations
-    alpha = 0.5;          % Randomness parameter
+    alpha = 0.8;          % Randomness parameter
     beta0 = 1.0;          % Attractiveness at distance r=0
-    gamma = 1.0;          % Light absorption coefficient
+    gamma = 0.1;          % Light absorption coefficient
     
     % PID Bounds: [Kp, Ki, Kd]
     lb = [0.1, 0.0, 0.01]; 
@@ -23,7 +23,7 @@ function [K_opt, f_evals, exec_time] = FMA(p, model_name, th_ref_ts)
 
     % Stagnation Criterion Parameters
     N_stall = 10;         % Number of generations without improvement to trigger stop
-    delta = 1e-3;         % Minimum required improvement in ITAE
+    delta = 1e-4;         % Minimum required improvement in ITAE
     stall_count = 0;      % Initialize counter
     prev_best_cost = inf; % Initialize previous best
     
