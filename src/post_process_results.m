@@ -34,33 +34,51 @@ function post_process_results(type, model_name, K_opt, th_ref_ts, opt_metrics, u
     error_sig = out.logsout.get('tracking_error').Values;
     control_sig = out.logsout.get('u_total').Values;
     
-    % Convert error to degrees 
+    % Convert error and trajectory to degrees 
     e_deg = error_sig.Data * (180/pi);
+    ref_deg = th_ref_ts.Data * (180/pi); 
+    theta_deg = theta_out.Data * (180/pi);
+    
     rmse_val = sqrt(mean(e_deg.^2));
     max_err = max(abs(e_deg));
+    
+    % Calculate ITAE for direct comparison
+    t = error_sig.Time;
+    e_rad = error_sig.Data; % Calculate ITAE using raw radians
+    itae_val = trapz(t, t .* abs(e_rad));
     
     fprintf('\n=== Final Performance Metrics (%s | %s) ===\n', type, ctrl_title);
     fprintf('RMSE       : %.4f degrees\n', rmse_val);
     fprintf('Max Error  : %.4f degrees\n', max_err);
+    fprintf('ITAE       : %.4f\n', itae_val);
     fprintf('========================================\n\n');
     
     % 3. Generate Plots
     disp('Generating independent figures...');
     
+    set(groot, 'defaultAxesFontName', 'Times New Roman');
+    set(groot, 'defaultTextFontName', 'Times New Roman');
+    set(groot, 'defaultTextInterpreter', 'tex');
+    set(groot, 'defaultLegendInterpreter', 'tex');
+    set(groot, 'defaultAxesTickLabelInterpreter', 'tex');
+    
     % RGB Color Palette
     modern_blue  = [0, 0.4470, 0.7410];
     modern_red   = [0.8500, 0.3250, 0.0980];
     modern_green = [0.4660, 0.6740, 0.1880];
+    modern_purple = [0.4940, 0.1840, 0.5560]; 
     
     fig_pos = [100, 100, 520, 230]; 
     t_max = max(theta_out.Time);
-    
+       
     % --- FIGURE 1: Trajectory Tracking ---
     fig_track = figure('Name', 'Trajectory Tracking', 'Position', fig_pos, 'Color', 'w');
-    plot(th_ref_ts, 'k--', 'LineWidth', 1.5); hold on;
-    plot(theta_out, 'Color', modern_blue, 'LineWidth', 1.8);
+    plot(th_ref_ts.Time, ref_deg, 'k--', 'LineWidth', 1.5); hold on;
+    plot(theta_out.Time, theta_deg, 'Color', modern_blue, 'LineWidth', 1.8);
     grid on; xlim([0, t_max]);
-    xlabel('Time (s)', 'FontSize', 10); ylabel('\theta (rad)', 'FontSize', 10);
+    
+    xlabel('Time (s)', 'FontSize', 10); 
+    ylabel('\theta (degrees)', 'FontSize', 10);
     legend('\theta_{ref}', '\theta', 'Location', 'best', 'FontSize', 9);
     title(sprintf('%s Trajectory Tracking (%s)', titleCase(type), ctrl_title), 'FontSize', 11, 'FontWeight', 'bold');
     set(gca, 'FontSize', 9);
@@ -69,45 +87,74 @@ function post_process_results(type, model_name, K_opt, th_ref_ts, opt_metrics, u
     fig_err = figure('Name', 'Tracking Error', 'Position', fig_pos, 'Color', 'w');
     plot(error_sig.Time, e_deg, 'Color', modern_red, 'LineWidth', 1.5);
     grid on; xlim([0, t_max]);
-    xlabel('Time (s)', 'FontSize', 10); ylabel('Error (degrees)', 'FontSize', 10);
+    
+    xlabel('Time (s)', 'FontSize', 10); 
+    ylabel('Error (degrees)', 'FontSize', 10);
     title(sprintf('Tracking Error Profile (%s)', ctrl_title), 'FontSize', 11, 'FontWeight', 'bold');
     set(gca, 'FontSize', 9);
     
     % --- FIGURE 3: Control Action ---
+    max_u = max(abs(control_sig.Data));
+    y_lim_dynamic = max(max_u * 1.2, 0.1);
+    
     fig_ctrl = figure('Name', 'Control Action', 'Position', fig_pos, 'Color', 'w');
     plot(control_sig.Time, control_sig.Data, 'Color', modern_green, 'LineWidth', 1.5); hold on;
     yline(12, 'k--', 'LineWidth', 1); yline(-12, 'k--', 'LineWidth', 1); 
-    grid on; xlim([0, t_max]); ylim([-14, 14]);
-    xlabel('Time (s)', 'FontSize', 10); ylabel('Control Input (V)', 'FontSize', 10);
+    grid on; xlim([0, t_max]); ylim([-y_lim_dynamic, y_lim_dynamic]);
+    
+    xlabel('Time (s)', 'FontSize', 10); 
+    ylabel('Control Input (V)', 'FontSize', 10);
     title(sprintf('Controller Output Voltage (%s)', ctrl_title), 'FontSize', 11, 'FontWeight', 'bold');
+    set(gca, 'FontSize', 9);
+    
+    % --- FIGURE 4: Torque ---
+    try
+        p_workspace = evalin('base', 'p'); 
+        torque_data = sign(control_sig.Data) .* p_workspace.k_T .* (p_workspace.K_v .* abs(control_sig.Data)).^2 .* p_workspace.L_p;
+    catch
+        warning('Parâmetros "p" não encontrados no workspace. Torque será 0.');
+        torque_data = zeros(size(control_sig.Data));
+    end
+    
+    max_tau = max(abs(torque_data));
+    tau_lim_dynamic = max(max_tau * 1.2, 0.01); 
+    
+    fig_torque = figure('Name', 'Generated Torque', 'Position', fig_pos, 'Color', 'w');
+    plot(control_sig.Time, torque_data, 'Color', modern_purple, 'LineWidth', 1.5); 
+    grid on; xlim([0, t_max]); ylim([-tau_lim_dynamic, tau_lim_dynamic]);
+    
+    xlabel('Time (s)', 'FontSize', 10); 
+    ylabel('Torque (Nm)', 'FontSize', 10);
+    title(sprintf('Propeller Generated Torque (%s)', ctrl_title), 'FontSize', 11, 'FontWeight', 'bold');
     set(gca, 'FontSize', 9);
     
     drawnow; % Force full rendering
     
-    % Export Data to .mat
+    Export Data to .mat
     disp('Exporting optimal trajectory data to .mat file...');
-    
+
     folder_name = 'data';
     if ~exist(folder_name, 'dir')
         mkdir(folder_name);
     end
-    
+
     % Build the results structure
     sim_data.type = type;
-    sim_data.control_type = ctrl_title; % Secure the label inside the data struct
+    sim_data.control_type = ctrl_title; 
     sim_data.K_opt = K_opt;
     sim_data.opt_metrics = opt_metrics;
     sim_data.performance.rmse_deg = rmse_val;
     sim_data.performance.max_err_deg = max_err;
+    sim_data.performance.itae = itae_val;
     sim_data.time = theta_out.Time;
-    sim_data.reference = th_ref_ts.Data;
-    sim_data.actual = theta_out.Data;
-    
-    % Create a timestamped filename incorporating trajectory AND control type
+    sim_data.reference = th_ref_ts.Data; 
+    sim_data.actual = theta_out.Data;    
+    sim_data.torque = torque_data;
+
     timestamp = char(datetime('now', 'Format', 'yyyy_MM_dd_HHmmss'));
     filename = sprintf('aeropendulum_opt_%s_%s_%s.mat', type, ctrl_file, timestamp);
     full_filepath = fullfile(folder_name, filename);
-    
+
     save(full_filepath, '-struct', 'sim_data');
     fprintf('Data successfully secured in: %s\n\n', full_filepath);
     
@@ -116,17 +163,24 @@ function post_process_results(type, model_name, K_opt, th_ref_ts, opt_metrics, u
     figs_folder = 'figs';
     if ~exist(figs_folder, 'dir'), mkdir(figs_folder); end
     
-    % Save paths injected with the control type
     path_track = fullfile(figs_folder, sprintf('aeropendulum_tracking_%s_%s.pdf', type, ctrl_file));
     path_error = fullfile(figs_folder, sprintf('aeropendulum_error_%s_%s.pdf', type, ctrl_file));
     path_control = fullfile(figs_folder, sprintf('aeropendulum_control_%s_%s.pdf', type, ctrl_file));
+    path_torque = fullfile(figs_folder, sprintf('aeropendulum_torque_%s_%s.pdf', type, ctrl_file));
     
     % Vector export with auto-cropping
     exportgraphics(fig_track, path_track, 'ContentType', 'vector', 'BackgroundColor', 'none');
     exportgraphics(fig_err, path_error, 'ContentType', 'vector', 'BackgroundColor', 'none');
     exportgraphics(fig_ctrl, path_control, 'ContentType', 'vector', 'BackgroundColor', 'none');
+    exportgraphics(fig_torque, path_torque, 'ContentType', 'vector', 'BackgroundColor', 'none');
     
     fprintf('All figures successfully exported to /%s/\n\n', figs_folder);
+    
+    set(groot, 'defaultAxesFontName', 'remove');
+    set(groot, 'defaultTextFontName', 'remove');
+    set(groot, 'defaultTextInterpreter', 'remove');
+    set(groot, 'defaultLegendInterpreter', 'remove');
+    set(groot, 'defaultAxesTickLabelInterpreter', 'remove');
 end
 
 function str = titleCase(str)
