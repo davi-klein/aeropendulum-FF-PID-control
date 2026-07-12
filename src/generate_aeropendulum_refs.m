@@ -15,7 +15,7 @@ function [th_ref_ts] = generate_aeropendulum_refs(type, t_end, dt)
     
     if strcmp('sine',type)
         % 1. Sine Wave Reference
-        th_sine = (amp/2)*sin(2*pi*freq*t);
+        th_sine = (amp)*sin(2*pi*freq*t);
         th_ref_ts = timeseries(th_sine', t');
     elseif strcmp('trapezoidal', type)
         % 2. Bipolar Differentiable Trapezoidal Reference
