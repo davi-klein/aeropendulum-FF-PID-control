@@ -34,7 +34,7 @@ function J = cost_function(K, model_name, th_ref_ts)
         
         % 2. Calculate Penalty for Voltage Violation (0 to 12V)
         u_max_violation = max(0, u - 12); 
-        u_min_violation = max(0, 0 - u);  
+        u_min_violation = max(0, -12 - u);  
         
         % Quadratic penalty integration
         penalty = trapz(t, u_max_violation.^2 + u_min_violation.^2);
