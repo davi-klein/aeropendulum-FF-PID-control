@@ -130,7 +130,7 @@ function post_process_results(type, model_name, K_opt, th_ref_ts, opt_metrics, u
     
     drawnow; % Force full rendering
     
-    Export Data to .mat
+    % Export Data to .mat
     disp('Exporting optimal trajectory data to .mat file...');
 
     folder_name = 'data';
